@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ΧΕΣΙΜULATOR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@500;700&display=swap&subset=greek" rel="stylesheet">
+<style>
+  :root{
+    --porcelain:#FAF6EF;--cream:#F3EADC;--cream-2:#EADDCB;
+    --espresso:#4A2F1B;--cocoa:#7A4E2D;--caramel:#C8902F;--mint:#5B8C6E;
+    --ink:#2A1C10;--muted:#8A7560;--bowl:#9FC4D6;--danger:#C5483B;
+    --shadow:0 10px 30px rgba(74,47,27,.12);--shadow-sm:0 4px 12px rgba(74,47,27,.10);--r:18px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{font-family:'Roboto',system-ui,sans-serif;color:var(--ink);min-height:100vh;line-height:1.5;
+    background:radial-gradient(120% 60% at 50% -10%, #fff 0%, var(--porcelain) 55%, #F0E6D6 100%);
+    -webkit-font-smoothing:antialiased;}
+  .app{max-width:480px;margin:0 auto;padding:0 16px 120px;min-height:100vh;}
+
+  header{padding:22px 0 10px;text-align:center;}
+  .brand{font-family:'Montserrat';font-weight:900;letter-spacing:-1.5px;font-size:clamp(30px,9vw,40px);
+    line-height:.95;color:var(--espresso);display:inline-flex;align-items:center;gap:6px;}
+  .brand .poo{font-size:.9em;filter:drop-shadow(0 3px 4px rgba(0,0,0,.15));}
+  .tagline{color:var(--muted);font-size:13px;font-weight:500;margin-top:4px;}
+  .streak-pill{margin:14px auto 0;display:inline-flex;align-items:center;gap:8px;
+    background:linear-gradient(135deg,#fff,var(--cream));border:1px solid var(--cream-2);
+    box-shadow:var(--shadow-sm);padding:8px 16px;border-radius:99px;font-weight:700;color:var(--espresso);font-size:14px;}
+  .streak-pill .fire{font-size:18px;}
+  .streak-pill b{font-family:'Roboto Mono';color:var(--caramel);}
+
+  nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:40;max-width:480px;margin:0 auto;
+    background:rgba(255,255,255,.86);backdrop-filter:blur(14px);border-top:1px solid var(--cream-2);
+    display:grid;grid-template-columns:repeat(3,1fr);padding:8px 8px calc(8px + env(safe-area-inset-bottom));}
+  nav.tabs button{border:0;background:none;cursor:pointer;padding:8px 4px;border-radius:14px;
+    display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);
+    font-family:'Montserrat';font-weight:700;font-size:11px;transition:color .2s,background .2s;}
+  nav.tabs button .ic{font-size:21px;line-height:1;}
+  nav.tabs button.active{color:var(--espresso);background:var(--cream);}
+  nav.tabs button.sos.active{color:var(--danger);background:#FBE8E5;}
+
+  .screen{display:none;animation:fade .35s ease;}
+  .screen.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+  .card{background:linear-gradient(180deg,#fff,var(--cream));border:1px solid var(--cream-2);
+    border-radius:var(--r);box-shadow:var(--shadow);padding:18px;margin-top:16px;}
+  .card h2{font-family:'Montserrat';font-weight:800;font-size:13px;letter-spacing:.6px;text-transform:uppercase;
+    color:var(--cocoa);margin:0 0 12px;display:flex;align-items:center;gap:8px;}
+  .card h2 .step{font-family:'Roboto Mono';background:var(--espresso);color:#fff;width:22px;height:22px;
+    border-radius:7px;display:grid;place-items:center;font-size:12px;}
+
+  /* CALENDAR */
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .cal-title{font-family:'Montserrat';font-weight:800;font-size:18px;color:var(--espresso);text-transform:capitalize;}
+  .cal-nav{border:1.5px solid var(--cream-2);background:#fff;border-radius:10px;width:38px;height:38px;
+    font-size:18px;cursor:pointer;color:var(--cocoa);display:grid;place-items:center;}
+  .cal-nav:active{transform:scale(.92);}
+  .cal-week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px;}
+  .cal-week div{text-align:center;font-family:'Montserrat';font-weight:700;font-size:11px;color:var(--muted);}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .day{aspect-ratio:1;border-radius:12px;border:1px solid transparent;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:2px;font-weight:600;font-size:14px;color:var(--ink);
+    background:rgba(255,255,255,.5);cursor:pointer;position:relative;transition:transform .12s,background .2s;}
+  .day.blank{background:none;cursor:default;}
+  .day.future{color:#c9bdae;background:rgba(255,255,255,.25);cursor:not-allowed;}
+  .day.has{background:var(--cream);}
+  .day.today{border-color:var(--caramel);background:linear-gradient(180deg,#fff,var(--cream));box-shadow:var(--shadow-sm);}
+  .day.today .dnum{color:var(--caramel);font-weight:800;}
+  .day:not(.blank):not(.future):active{transform:scale(.9);}
+  .day .dots{display:flex;gap:2px;font-size:9px;line-height:1;height:10px;}
+  .day .cnt{position:absolute;top:3px;right:4px;font-family:'Roboto Mono';font-size:9px;font-weight:700;
+    background:var(--espresso);color:#fff;border-radius:6px;padding:0 4px;}
+  .cal-legend{display:flex;justify-content:center;gap:16px;margin-top:14px;font-size:11px;color:var(--muted);}
+  .cal-legend span{display:inline-flex;align-items:center;gap:5px;}
+  .lg-dot{width:11px;height:11px;border-radius:4px;display:inline-block;}
+
+  /* OVERLAY / SHEET */
+  .overlay{position:fixed;inset:0;z-index:60;background:rgba(42,28,16,.45);backdrop-filter:blur(2px);
+    display:none;align-items:flex-end;}
+  .overlay.open{display:flex;animation:fade .25s ease;}
+  .sheet{background:var(--porcelain);width:100%;max-width:480px;margin:0 auto;border-radius:26px 26px 0 0;
+    max-height:92vh;overflow-y:auto;padding:8px 16px calc(24px + env(safe-area-inset-bottom));
+    box-shadow:0 -10px 40px rgba(0,0,0,.25);animation:slideUp .3s cubic-bezier(.2,.8,.2,1);}
+  @keyframes slideUp{from{transform:translateY(100%);}to{transform:none;}}
+  .sheet-grab{width:42px;height:5px;border-radius:99px;background:var(--cream-2);margin:8px auto 12px;}
+  .sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+  .sheet-title{font-family:'Montserrat';font-weight:900;font-size:20px;color:var(--espresso);text-transform:capitalize;}
+  .sheet-x{border:0;background:var(--cream);width:34px;height:34px;border-radius:50%;font-size:18px;
+    cursor:pointer;color:var(--cocoa);}
+  .sheet-sub{color:var(--muted);font-size:13px;margin-bottom:10px;}
+
+  .add-btn{width:100%;background:linear-gradient(135deg,var(--mint),#46735a);color:#fff;border:0;border-radius:14px;
+    padding:15px;font-family:'Montserrat';font-weight:900;font-size:16px;cursor:pointer;margin:6px 0;box-shadow:var(--shadow-sm);}
+  .add-btn:active{transform:scale(.98);}
+  .shareall-btn{width:100%;background:#fff;color:var(--cocoa);border:1.5px solid var(--cream-2);border-radius:14px;
+    padding:13px;font-family:'Montserrat';font-weight:800;font-size:14px;cursor:pointer;margin-bottom:8px;}
+
+  /* DAY ENTRY MINI CARD */
+  .dentry{background:linear-gradient(180deg,#fff,var(--cream));border:1px solid var(--cream-2);border-radius:16px;
+    padding:13px;margin-top:10px;box-shadow:var(--shadow-sm);}
+  .dentry-top{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .dscore{font-family:'Roboto Mono';font-weight:700;font-size:18px;color:#fff;background:var(--caramel);
+    border-radius:9px;padding:2px 9px;}
+  .dtime{font-family:'Roboto Mono';color:var(--muted);font-size:13px;font-weight:700;}
+  .dtags{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;}
+  .tag{background:var(--porcelain);border:1px solid var(--cream-2);border-radius:8px;padding:3px 9px;
+    font-size:12px;font-weight:600;color:var(--cocoa);}
+  .dweather{margin-top:9px;background:var(--porcelain);border:1px solid var(--cream-2);border-radius:10px;
+    padding:7px 11px;font-size:12px;font-weight:600;color:var(--cocoa);}
+  .dnote{margin-top:9px;font-size:13px;background:var(--porcelain);border-radius:10px;padding:8px 11px;
+    border-left:3px solid var(--caramel);}
+  .dphotos{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap;}
+  .dphotos img{width:56px;height:56px;object-fit:cover;border-radius:10px;border:1px solid var(--cream-2);}
+  .dactions{display:flex;gap:7px;margin-top:11px;}
+  .mini{flex:1;border:0;border-radius:10px;padding:9px;font-family:'Montserrat';font-weight:700;font-size:12px;cursor:pointer;}
+  .mini.share{background:var(--cream);color:var(--cocoa);}
+  .mini.del{background:#FBE8E5;color:var(--danger);flex:0 0 44px;}
+
+  /* FORM (inside log sheet) */
+  .mascot-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;margin:6px 0 2px;}
+  .mascot{font-size:60px;line-height:1;transition:transform .25s;filter:drop-shadow(0 8px 10px rgba(74,47,27,.18));}
+  .mascot.straining{animation:strain .6s ease-in-out infinite;}
+  @keyframes strain{0%,100%{transform:scale(1) rotate(0);}50%{transform:scale(1.08) rotate(-2deg);}}
+  .mascot-label{font-family:'Montserrat';font-weight:800;font-size:15px;color:var(--espresso);min-height:20px;text-align:center;}
+  .fcard{background:#fff;border:1px solid var(--cream-2);border-radius:14px;padding:14px;margin-top:12px;}
+  .fcard h3{font-family:'Montserrat';font-weight:800;font-size:12px;letter-spacing:.5px;text-transform:uppercase;
+    color:var(--cocoa);margin:0 0 10px;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{border:1.5px solid var(--cream-2);background:#fff;border-radius:99px;padding:9px 15px;font-weight:600;
+    font-size:14px;color:var(--cocoa);cursor:pointer;transition:all .18s;}
+  .chip:active{transform:scale(.95);}
+  .chip.sel{background:var(--espresso);color:#fff;border-color:var(--espresso);}
+  .slider-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;}
+  .slider-val{font-family:'Roboto Mono';font-weight:700;font-size:24px;color:var(--caramel);}
+  .slider-val small{font-size:13px;color:var(--muted);}
+  .slider-label{font-weight:700;color:var(--espresso);font-size:13px;text-align:right;max-width:55%;}
+  input[type=range]{-webkit-appearance:none;width:100%;height:10px;border-radius:99px;
+    background:linear-gradient(90deg,var(--caramel) var(--p,50%),var(--cream-2) var(--p,50%));outline:none;margin:6px 0;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;
+    background:#fff;border:3px solid var(--espresso);box-shadow:var(--shadow-sm);cursor:pointer;}
+  input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:#fff;border:3px solid var(--espresso);cursor:pointer;}
+  .tex-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .tex{border:1.5px solid var(--cream-2);background:#fff;border-radius:14px;padding:11px;cursor:pointer;transition:all .18s;}
+  .tex:active{transform:scale(.97);}
+  .tex.sel{border-color:var(--cocoa);background:var(--cream);}
+  .tex .emo{font-size:24px;}
+  .tex .nm{font-family:'Montserrat';font-weight:800;font-size:14px;color:var(--espresso);}
+  .tex .sub{font-size:11px;color:var(--muted);}
+  .timer-box{display:flex;align-items:center;gap:8px;}
+  .timer-read{font-family:'Roboto Mono';font-weight:700;font-size:28px;color:var(--espresso);background:var(--porcelain);
+    border:1px solid var(--cream-2);border-radius:12px;padding:6px 10px;flex:1;text-align:center;letter-spacing:1px;}
+  .btn{border:0;border-radius:12px;padding:12px 14px;font-family:'Montserrat';font-weight:800;font-size:13px;
+    cursor:pointer;transition:transform .15s;}
+  .btn:active{transform:scale(.95);}
+  .btn-go{background:var(--mint);color:#fff;}
+  .btn-stop{background:var(--danger);color:#fff;}
+  .btn-reset{background:#fff;border:1.5px solid var(--cream-2);color:var(--cocoa);}
+  textarea{width:100%;border:1.5px solid var(--cream-2);border-radius:12px;padding:12px;font-family:'Roboto';
+    font-size:15px;color:var(--ink);background:#fff;resize:vertical;min-height:64px;}
+  textarea:focus,input:focus{outline:2px solid var(--caramel);outline-offset:1px;}
+  .photo-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+  .photo-thumb{position:relative;width:70px;height:70px;border-radius:12px;overflow:hidden;border:1px solid var(--cream-2);}
+  .photo-thumb img{width:100%;height:100%;object-fit:cover;}
+  .photo-thumb .del{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;
+    background:rgba(42,28,16,.8);color:#fff;border:0;font-size:13px;cursor:pointer;line-height:1;}
+  .photo-add{width:70px;height:70px;border-radius:12px;border:2px dashed var(--cream-2);background:#fff;
+    display:grid;place-items:center;cursor:pointer;color:var(--muted);font-size:24px;}
+  .save-btn{width:100%;background:linear-gradient(135deg,var(--cocoa),var(--espresso));color:#fff;border:0;
+    border-radius:16px;padding:17px;font-family:'Montserrat';font-weight:900;font-size:16px;letter-spacing:.5px;
+    margin-top:16px;cursor:pointer;box-shadow:var(--shadow);}
+  .save-btn:active{transform:scale(.98);}
+
+  /* STATS */
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .stat{background:linear-gradient(180deg,#fff,var(--cream));border:1px solid var(--cream-2);border-radius:16px;
+    padding:14px;box-shadow:var(--shadow-sm);}
+  .stat .num{font-family:'Roboto Mono';font-weight:700;font-size:26px;color:var(--espresso);}
+  .stat .lbl{font-size:12px;color:var(--muted);font-weight:600;margin-top:2px;}
+  .life{background:linear-gradient(135deg,var(--espresso),#2f1d10);color:#fff;border:0;text-align:center;}
+  .life .num{color:var(--caramel);font-size:34px;}
+  .life .lbl{color:#e8d9c5;font-size:13px;}
+  .bar-chart{display:flex;align-items:flex-end;gap:5px;height:90px;margin-top:8px;}
+  .bar{flex:1;background:linear-gradient(180deg,var(--caramel),var(--cocoa));border-radius:5px 5px 0 0;min-height:4px;}
+  .badges{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;}
+  .badge{display:flex;gap:10px;align-items:center;border:1px solid var(--cream-2);border-radius:12px;padding:10px;background:#fff;}
+  .badge.locked{opacity:.4;filter:grayscale(1);}
+  .badge .bemo{font-size:26px;}
+  .badge .bnm{font-family:'Montserrat';font-weight:800;font-size:12px;color:var(--espresso);}
+  .badge .bds{font-size:10.5px;color:var(--muted);}
+
+  /* SOS */
+  .sos-call{display:flex;align-items:center;gap:14px;background:linear-gradient(180deg,#fff,var(--cream));
+    border:1px solid var(--cream-2);border-radius:16px;padding:14px;margin-top:12px;text-decoration:none;
+    color:inherit;box-shadow:var(--shadow-sm);}
+  .sos-call:active{transform:scale(.98);}
+  .sos-call .ico{font-size:30px;width:50px;height:50px;display:grid;place-items:center;background:var(--porcelain);border-radius:14px;}
+  .sos-call .info{flex:1;}
+  .sos-call .nm{font-family:'Montserrat';font-weight:800;color:var(--espresso);font-size:16px;}
+  .sos-call .ds{font-size:12px;color:var(--muted);}
+  .sos-call .num{font-family:'Roboto Mono';font-weight:700;font-size:22px;color:var(--danger);}
+  .plumber-edit{display:flex;gap:8px;margin-top:8px;}
+  .plumber-edit input{flex:1;border:1.5px solid var(--cream-2);border-radius:10px;padding:10px;font-family:'Roboto Mono';font-size:15px;}
+
+  .empty{text-align:center;color:var(--muted);padding:30px 20px;}
+  .empty .big{font-size:48px;}
+  .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);background:var(--espresso);
+    color:#fff;padding:13px 22px;border-radius:99px;font-weight:700;font-family:'Montserrat';font-size:14px;
+    box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:all .35s;z-index:90;max-width:90%;text-align:center;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .disclaimer{text-align:center;color:var(--muted);font-size:11px;margin-top:18px;line-height:1.5;}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><span class="poo">💩</span>ΧΕΣΙΜULATOR</div>
+    <div class="tagline">Το επίσημο ημερολόγιο του εντέρου σου</div>
+    <div class="streak-pill"><span class="fire">🔥</span>Σερί: <b id="streakNum">0</b> μέρες</div>
+  </header>
+
+  <!-- ============ CALENDAR ============ -->
+  <section class="screen active" id="screen-cal">
+    <div class="card">
+      <div class="cal-head">
+        <button class="cal-nav" id="prevM">‹</button>
+        <div class="cal-title" id="calTitle">—</div>
+        <button class="cal-nav" id="nextM">›</button>
+      </div>
+      <div class="cal-week"><div>Δε</div><div>Τρ</div><div>Τε</div><div>Πε</div><div>Πα</div><div>Σα</div><div>Κυ</div></div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-legend">
+        <span><i class="lg-dot" style="background:var(--cream);"></i>Καταγραφή</span>
+        <span><i class="lg-dot" style="background:#fff;border:1.5px solid var(--caramel);"></i>Σήμερα</span>
+      </div>
+    </div>
+    <div class="disclaimer">Πατάς τη <b>σημερινή</b> μέρα για να καταγράψεις. Μπορείς να βάλεις κι άλλα χεσίματα αργότερα την ίδια μέρα. Δεν αποτελεί ιατρική συμβουλή.</div>
+  </section>
+
+  <!-- ============ STATS ============ -->
+  <section class="screen" id="screen-stats">
+    <div class="card life" style="margin-top:16px;">
+      <div class="num" id="lifeDays">0</div>
+      <div class="lbl">μέρες της ζωής σου θα περάσεις χέζοντας ⏳</div>
+    </div>
+    <div class="stat-grid" style="margin-top:12px;">
+      <div class="stat"><div class="num" id="stTotal">0</div><div class="lbl">Σύνολο χεσιμάτων</div></div>
+      <div class="stat"><div class="num" id="stAvg">–</div><div class="lbl">Μ.Ο. βαθμολογίας</div></div>
+      <div class="stat"><div class="num" id="stTime">0'</div><div class="lbl">Συνολικός χρόνος</div></div>
+      <div class="stat"><div class="num" id="stFav">–</div><div class="lbl">Αγαπημένη υφή</div></div>
+    </div>
+    <div class="card"><h2>📊 Βαθμολογίες (τελευταία 10)</h2><div class="bar-chart" id="barChart"></div></div>
+    <div class="card"><h2>🏅 Παράσημα</h2><div class="badges" id="badges"></div></div>
+  </section>
+
+  <!-- ============ SOS ============ -->
+  <section class="screen" id="screen-sos">
+    <div class="card" style="text-align:center;background:#FBE8E5;border-color:#f3cfc9;">
+      <h2 style="justify-content:center;color:var(--danger);">🆘 Έκτακτη ανάγκη</h2>
+      <div style="color:var(--cocoa);font-size:13px;">Όταν τα πράγματα ξεφύγουν. Πάτα για κλήση.</div>
+    </div>
+    <a class="sos-call" href="tel:166"><div class="ico">🚑</div><div class="info"><div class="nm">ΕΚΑΒ</div><div class="ds">Ασθενοφόρο</div></div><div class="num">166</div></a>
+    <a class="sos-call" href="tel:199"><div class="ico">🚒</div><div class="info"><div class="nm">Πυροσβεστική</div><div class="ds">Αν κάηκε το μπάνιο</div></div><div class="num">199</div></a>
+    <a class="sos-call" href="tel:100"><div class="ico">🚓</div><div class="info"><div class="nm">Αστυνομία</div><div class="ds">Έγκλημα στη λεκάνη</div></div><div class="num">100</div></a>
+    <a class="sos-call" href="tel:112"><div class="ico">📞</div><div class="info"><div class="nm">Πανευρωπαϊκό SOS</div><div class="ds">Για όλα τα έκτακτα</div></div><div class="num">112</div></a>
+    <div class="card"><h2>🔧 Ο υδραυλικός σου</h2>
+      <a class="sos-call" id="plumberCall" href="#" style="margin-top:4px;"><div class="ico">🪠</div><div class="info"><div class="nm">Υδραυλικός</div><div class="ds" id="plumberDs">Δεν έχει οριστεί ακόμα</div></div><div class="num" id="plumberNum">—</div></a>
+      <div class="plumber-edit"><input type="tel" id="plumberInput" placeholder="πχ 2310 000000"><button class="btn btn-reset" id="plumberSave">Αποθήκευση</button></div>
+    </div>
+  </section>
+</div>
+
+<nav class="tabs">
+  <button class="active" data-screen="cal"><span class="ic">📅</span>Ημερολόγιο</button>
+  <button data-screen="stats"><span class="ic">📊</span>Στατιστικά</button>
+  <button class="sos" data-screen="sos"><span class="ic">🆘</span>SOS</button>
+</nav>
+
+<!-- DAY SHEET -->
+<div class="overlay" id="dayOverlay">
+  <div class="sheet" id="daySheet">
+    <div class="sheet-grab"></div>
+    <div class="sheet-head"><div class="sheet-title" id="dayTitle">—</div><button class="sheet-x" id="dayClose">×</button></div>
+    <div class="sheet-sub" id="daySub"></div>
+    <div id="dayBody"></div>
+  </div>
+</div>
+
+<!-- LOG SHEET -->
+<div class="overlay" id="logOverlay">
+  <div class="sheet" id="logSheet">
+    <div class="sheet-grab"></div>
+    <div class="sheet-head"><div class="sheet-title">Νέο χέσιμο 💩</div><button class="sheet-x" id="logClose">×</button></div>
+    <div class="mascot-wrap"><div class="mascot" id="mascot">💩</div><div class="mascot-label" id="mascotLabel">Διάλεξε βαθμολογία</div></div>
+
+    <div class="fcard"><h3>⭐ Βαθμολογία (1–10 κουράδες)</h3>
+      <div class="slider-head"><div class="slider-val"><span id="ratingVal">5</span><small>/10</small></div><div class="slider-label" id="ratingLabel">Μέτριο 😐</div></div>
+      <input type="range" id="rating" min="1" max="10" value="5"></div>
+
+    <div class="fcard"><h3>🧬 Υφή (Bristol Scale)</h3><div class="tex-grid" id="texGrid"></div></div>
+
+    <div class="fcard"><h3>📍 Πού έγινε;</h3><div class="chips" id="locChips"></div></div>
+
+    <div class="fcard"><h3>🤕 Επίπεδο πόνου</h3>
+      <div class="slider-head"><div class="slider-val"><span id="painVal">0</span><small>/10</small></div><div class="slider-label" id="painLabel">Μηδέν πόνος 😌</div></div>
+      <input type="range" id="pain" min="0" max="10" value="0"></div>
+
+    <div class="fcard"><h3>⏱️ Διάρκεια</h3>
+      <div class="timer-box">
+        <div class="timer-read" id="timerRead">00:00</div>
+        <button class="btn btn-go" id="timerBtn">▶</button>
+        <button class="btn btn-reset" id="timerReset">🔄</button>
+      </div>
+      <div style="text-align:center;color:var(--muted);font-size:12px;margin-top:8px;">▶ ξεκίνα · ⏹ σταμάτα · 🔄 μηδένισε (αν το πάτησες κατά λάθος)</div></div>
+
+    <div class="fcard"><h3>📸 Φωτογραφίες</h3>
+      <div style="color:var(--muted);font-size:12px;margin-bottom:6px;">Αποθηκεύονται τοπικά, μόνο εσύ τις βλέπεις.</div>
+      <div class="photo-row" id="photoRow"><div class="photo-add" id="photoAdd">+</div></div>
+      <input type="file" id="photoInput" accept="image/*" capture="environment" multiple style="display:none;"></div>
+
+    <div class="fcard"><h3>💬 Σχόλια του κριτικού</h3>
+      <textarea id="comments" placeholder="π.χ. «Καθαρό φινίρισμα, δυνατό ξεκίνημα...»"></textarea></div>
+
+    <button class="save-btn" id="saveBtn">💾 ΚΑΤΑΓΡΑΨΕ ΤΟ ΧΕΣΙΜΟ</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- STORAGE (window.storage + in-memory fallback) ---------- */
+const mem={};
+const hasStore=typeof window!=='undefined'&&window.storage&&typeof window.storage.get==='function';
+async function sGet(k){ if(hasStore){try{const r=await window.storage.get(k);return r?r.value:null;}catch(e){return null;}} return (k in mem)?mem[k]:null; }
+async function sSet(k,v){ if(hasStore){try{await window.storage.set(k,v);return true;}catch(e){return false;}} mem[k]=v;return true; }
+async function sDel(k){ if(hasStore){try{await window.storage.delete(k);}catch(e){}} else {delete mem[k];} }
+
+/* ---------- DATA ---------- */
+const TEXTURES=[
+  {id:'nerouli',emo:'💧',nm:'Νερουλή',sub:'Bristol 6–7'},
+  {id:'endiameso',emo:'🌀',nm:'Ενδιάμεσο',sub:'Bristol 4–5'},
+  {id:'stegni',emo:'🌰',nm:'Στεγνή',sub:'Bristol 2–3'},
+  {id:'sterea',emo:'🗿',nm:'Στερεά',sub:'Bristol 1'}
+];
+const LOCATIONS=['🏠 Σπίτι','🏢 Δουλειά','🎓 Σχολή','🍽️ Εστιατόριο','🧍 Φίλου','🚏 Δημόσια','🏝️ Εκτός έδρας'];
+const WEATHER={nerouli:'🌧️ Καταρρακτώδεις βροχές, αυξημένη υγρασία',endiameso:'⛅ Συννεφιά με τοπικά διαλείμματα',stegni:'☀️ Ξηρασία — πιες λίγο νεράκι',sterea:'🗿 Σταθερό αντικυκλωνικό σύστημα'};
+const RATING_LABELS=['','Έγκλημα πολέμου ☠️','Τραγωδία 😭','Κακό 😣','Έτσι κι έτσι 😕','Μέτριο 😐','Καλούτσικο 🙂','Καλό 😊','Πολύ καλό 😎','Εξαιρετικό 🤩','ΑΡΙΣΤΟΥΡΓΗΜΑ 👑'];
+const PAIN_LABELS=['Μηδέν πόνος 😌','Ψιλοενόχληση 🙂','Λίγο 😐','Αισθητό 😕','Δυσφορία 😣','Πονάει 😖','Αρκετά 😫','Πολύ 😩','Βάσανο 😵','Κόλαση 🔥','Είδα τον Χάρο 💀'];
+const MONTHS=['Ιανουάριος','Φεβρουάριος','Μάρτιος','Απρίλιος','Μάιος','Ιούνιος','Ιούλιος','Αύγουστος','Σεπτέμβριος','Οκτώβριος','Νοέμβριος','Δεκέμβριος'];
+function mascotFor(r){ if(r<=2)return'😖'; if(r<=4)return'😣'; if(r<=6)return'😐'; if(r<=8)return'😌'; return'🤩'; }
+
+let entries=[];
+let form={rating:5,texture:null,location:null,pain:0,duration:0,photos:[]};
+let timer={running:false,start:0,base:0,int:null};
+let viewY,viewM;          // displayed month
+let activeDay=null;       // Date currently open in day sheet
+
+/* ---------- INIT ---------- */
+async function init(){
+  const raw=await sGet('xesim:entries'); entries=raw?JSON.parse(raw):[];
+  const pl=await sGet('xesim:plumber'); if(pl) setPlumberUI(JSON.parse(pl));
+  const n=new Date(); viewY=n.getFullYear(); viewM=n.getMonth();
+  buildTextures(); buildLocations(); bindForm(); bindTabs(); bindTimer(); bindPhotos(); bindPlumber(); bindSheets();
+  document.getElementById('prevM').onclick=()=>{viewM--;if(viewM<0){viewM=11;viewY--;}renderCalendar();};
+  document.getElementById('nextM').onclick=()=>{viewM++;if(viewM>11){viewM=0;viewY++;}renderCalendar();};
+  renderStreak(); renderCalendar(); renderStats();
+}
+
+/* ---------- CALENDAR ---------- */
+function keyOf(d){return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();}
+function midnight(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
+function entriesForKey(k){return entries.filter(e=>keyOf(new Date(e.ts))===k).sort((a,b)=>a.ts-b.ts);}
+function renderCalendar(){
+  document.getElementById('calTitle').textContent=MONTHS[viewM]+' '+viewY;
+  const grid=document.getElementById('calGrid'); grid.innerHTML='';
+  const first=new Date(viewY,viewM,1);
+  const lead=(first.getDay()+6)%7; // Monday start
+  const days=new Date(viewY,viewM+1,0).getDate();
+  const today=midnight(new Date());
+  for(let i=0;i<lead;i++){const b=document.createElement('div');b.className='day blank';grid.appendChild(b);}
+  for(let d=1;d<=days;d++){
+    const date=new Date(viewY,viewM,d);
+    const k=keyOf(date);
+    const dayEntries=entriesForKey(k);
+    const cell=document.createElement('div'); cell.className='day';
+    const isToday=date.getTime()===today.getTime();
+    const isFuture=date.getTime()>today.getTime();
+    if(isFuture)cell.classList.add('future');
+    if(isToday)cell.classList.add('today');
+    if(dayEntries.length)cell.classList.add('has');
+    let dots=''; const dn=Math.min(dayEntries.length,3); for(let i=0;i<dn;i++)dots+='💩';
+    cell.innerHTML=`<div class="dnum">${d}</div><div class="dots">${dots}</div>`+
+      (dayEntries.length?`<div class="cnt">${dayEntries.length}</div>`:'');
+    if(!isFuture){ cell.onclick=()=>openDay(date); }
+    else { cell.onclick=()=>toast('Δεν χέζεις στο μέλλον 🔮'); }
+    grid.appendChild(cell);
+  }
+}
+
+/* ---------- DAY SHEET ---------- */
+function openDay(date){
+  activeDay=date;
+  const today=midnight(new Date());
+  const isToday=midnight(date).getTime()===today.getTime();
+  const k=keyOf(date);
+  const list=entriesForKey(k);
+  document.getElementById('dayTitle').textContent=dayName(date)+' '+date.getDate()+' '+MONTHS[date.getMonth()].slice(0,3);
+  document.getElementById('daySub').textContent=isToday?'Σήμερα · μπορείς να καταγράψεις':(list.length?list.length+' καταγραφές':'Καμία καταγραφή — η μέρα πέρασε');
+  const body=document.getElementById('dayBody'); body.innerHTML='';
+  if(isToday){
+    const add=document.createElement('button'); add.className='add-btn'; add.textContent='➕ Νέο χέσιμο';
+    add.onclick=openLog; body.appendChild(add);
+  }
+  if(list.length){
+    const sa=document.createElement('button'); sa.className='shareall-btn'; sa.textContent='📤 Κοινοποίηση όλης της ημέρας';
+    sa.onclick=()=>shareDay(k); body.appendChild(sa);
+    list.forEach(e=>body.appendChild(renderDayEntry(e)));
+  } else if(!isToday){
+    const em=document.createElement('div'); em.className='empty'; em.innerHTML='<div class="big">🚽</div><p>Τίποτα αυτή τη μέρα.</p>'; body.appendChild(em);
+  }
+  document.getElementById('dayOverlay').classList.add('open');
+  // lazy-load photos
+  list.forEach(e=>{ if(e.photoCount) loadPhotos(e.id,'dph-'+e.id); });
+}
+function renderDayEntry(e){
+  const tex=TEXTURES.find(t=>t.id===e.texture)||{emo:'',nm:''};
+  const d=new Date(e.ts);
+  const div=document.createElement('div'); div.className='dentry';
+  div.innerHTML=`
+    <div class="dentry-top"><span class="dscore">${e.rating}/10</span><span class="dtime">🕒 ${d.toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'})}</span></div>
+    <div class="dtags"><span class="tag">${tex.emo} ${tex.nm}</span><span class="tag">📍 ${e.location}</span><span class="tag">⏱️ ${fmtTime(e.duration)}</span><span class="tag">🤕 ${e.pain}/10</span></div>
+    <div class="dweather">${WEATHER[e.texture]||''}</div>
+    ${e.comments?`<div class="dnote">"${escapeHtml(e.comments)}"</div>`:''}
+    <div class="dphotos" id="dph-${e.id}"></div>
+    <div class="dactions"><button class="mini share" data-sh="${e.id}">📤 Απόδειξη</button><button class="mini del" data-dl="${e.id}">🗑️</button></div>`;
+  div.querySelector('[data-sh]').onclick=()=>shareEntry(e.id);
+  div.querySelector('[data-dl]').onclick=()=>delEntry(e.id);
+  return div;
+}
+async function loadPhotos(id,target){
+  const raw=await sGet('xesim:photos:'+id); if(!raw)return;
+  const ph=JSON.parse(raw); const c=document.getElementById(target); if(!c)return; c.innerHTML='';
+  ph.forEach(p=>{const img=document.createElement('img');img.src=p;c.appendChild(img);});
+}
+
+/* ---------- LOG SHEET ---------- */
+function openLog(){ resetForm(); document.getElementById('logOverlay').classList.add('open'); }
+function closeLog(){ document.getElementById('logOverlay').classList.remove('open'); stopTimer(true); }
+function bindSheets(){
+  document.getElementById('dayClose').onclick=()=>document.getElementById('dayOverlay').classList.remove('open');
+  document.getElementById('logClose').onclick=closeLog;
+  document.getElementById('dayOverlay').onclick=e=>{if(e.target.id==='dayOverlay')e.currentTarget.classList.remove('open');};
+  document.getElementById('logOverlay').onclick=e=>{if(e.target.id==='logOverlay')closeLog();};
+}
+function buildTextures(){
+  const g=document.getElementById('texGrid');g.innerHTML='';
+  TEXTURES.forEach(t=>{const el=document.createElement('div');el.className='tex';
+    el.innerHTML=`<div class="emo">${t.emo}</div><div class="nm">${t.nm}</div><div class="sub">${t.sub}</div>`;
+    el.onclick=()=>{form.texture=t.id;document.querySelectorAll('.tex').forEach(x=>x.classList.remove('sel'));el.classList.add('sel');};
+    g.appendChild(el);});
+}
+function buildLocations(){
+  const c=document.getElementById('locChips');c.innerHTML='';
+  LOCATIONS.forEach(l=>{const el=document.createElement('div');el.className='chip';el.textContent=l;
+    el.onclick=()=>{form.location=l;document.querySelectorAll('#locChips .chip').forEach(x=>x.classList.remove('sel'));el.classList.add('sel');};
+    c.appendChild(el);});
+}
+function bindForm(){
+  const r=document.getElementById('rating');
+  r.oninput=()=>{form.rating=+r.value;document.getElementById('ratingVal').textContent=r.value;
+    document.getElementById('ratingLabel').textContent=RATING_LABELS[+r.value];
+    r.style.setProperty('--p',((+r.value-1)/9*100)+'%');updateMascot();};
+  r.style.setProperty('--p',((5-1)/9*100)+'%');
+  const p=document.getElementById('pain');
+  p.oninput=()=>{form.pain=+p.value;document.getElementById('painVal').textContent=p.value;
+    document.getElementById('painLabel').textContent=PAIN_LABELS[+p.value];p.style.setProperty('--p',(+p.value/10*100)+'%');};
+  document.getElementById('saveBtn').onclick=saveEntry;
+}
+function updateMascot(){const m=document.getElementById('mascot');
+  m.textContent=timer.running?'😤':mascotFor(form.rating);
+  document.getElementById('mascotLabel').textContent=timer.running?'Σπρώξε... 💪':RATING_LABELS[form.rating];}
+
+/* ---------- TIMER (with reset) ---------- */
+function bindTimer(){
+  document.getElementById('timerBtn').onclick=toggleTimer;
+  document.getElementById('timerReset').onclick=()=>{ stopTimer(true); toast('Χρονόμετρο στο μηδέν 🔄'); };
+}
+function toggleTimer(){
+  const btn=document.getElementById('timerBtn'); const m=document.getElementById('mascot');
+  if(!timer.running){timer.running=true;timer.start=Date.now();btn.textContent='⏹';btn.className='btn btn-stop';
+    m.classList.add('straining');timer.int=setInterval(tick,200);updateMascot();}
+  else{timer.running=false;clearInterval(timer.int);timer.base+=Date.now()-timer.start;form.duration=Math.round(timer.base/1000);
+    btn.textContent='▶';btn.className='btn btn-go';m.classList.remove('straining');updateMascot();}
+}
+function stopTimer(reset){
+  timer.running=false; clearInterval(timer.int);
+  if(reset){timer.base=0;form.duration=0;const tr=document.getElementById('timerRead');if(tr)tr.textContent='00:00';}
+  const btn=document.getElementById('timerBtn'); if(btn){btn.textContent='▶';btn.className='btn btn-go';}
+  const m=document.getElementById('mascot'); if(m)m.classList.remove('straining'); updateMascot();
+}
+function tick(){const total=timer.base+(Date.now()-timer.start);const s=Math.floor(total/1000);
+  document.getElementById('timerRead').textContent=fmtTime(s);form.duration=s;}
+function fmtTime(s){const m=Math.floor(s/60),ss=s%60;return String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0');}
+
+/* ---------- PHOTOS ---------- */
+function bindPhotos(){
+  document.getElementById('photoAdd').onclick=()=>document.getElementById('photoInput').click();
+  document.getElementById('photoInput').onchange=async e=>{
+    for(const f of e.target.files){if(form.photos.length>=6){toast('Μέχρι 6 φωτό ανά χέσιμο 😅');break;}const b=await compress(f);form.photos.push(b);}
+    e.target.value='';renderFormPhotos();};
+}
+function compress(file){return new Promise(res=>{const img=new Image();const rd=new FileReader();
+  rd.onload=()=>{img.onload=()=>{const max=700;let w=img.width,h=img.height;
+    if(w>h&&w>max){h=h*max/w;w=max;}else if(h>max){w=w*max/h;h=max;}
+    const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+    res(c.toDataURL('image/jpeg',0.55));};img.src=rd.result;};rd.readAsDataURL(file);});}
+function renderFormPhotos(){
+  const row=document.getElementById('photoRow');row.querySelectorAll('.photo-thumb').forEach(x=>x.remove());
+  const add=document.getElementById('photoAdd');
+  form.photos.forEach((p,i)=>{const d=document.createElement('div');d.className='photo-thumb';
+    d.innerHTML=`<img src="${p}"><button class="del">×</button>`;
+    d.querySelector('.del').onclick=()=>{form.photos.splice(i,1);renderFormPhotos();};
+    row.insertBefore(d,add);});
+}
+
+/* ---------- SAVE ---------- */
+async function saveEntry(){
+  if(!form.texture){toast('Διάλεξε υφή 💩');return;}
+  if(!form.location){toast('Πού έγινε; Διάλεξε τοποθεσία 📍');return;}
+  const id='x'+Date.now();
+  const entry={id,ts:Date.now(),rating:form.rating,texture:form.texture,location:form.location,
+    pain:form.pain,duration:form.duration,comments:document.getElementById('comments').value.trim(),photoCount:form.photos.length};
+  if(form.photos.length)await sSet('xesim:photos:'+id,JSON.stringify(form.photos));
+  entries.unshift(entry);
+  await sSet('xesim:entries',JSON.stringify(entries));
+  toast('Καταγράφηκε! 🎉');
+  closeLog(); renderStreak(); renderCalendar(); renderStats();
+  if(activeDay) openDay(activeDay); // refresh day sheet with new entry
+}
+function resetForm(){
+  form={rating:5,texture:null,location:null,pain:0,duration:0,photos:[]};
+  const r=document.getElementById('rating');r.value=5;r.dispatchEvent(new Event('input'));
+  const p=document.getElementById('pain');p.value=0;p.dispatchEvent(new Event('input'));
+  document.querySelectorAll('.tex,.chip').forEach(x=>x.classList.remove('sel'));
+  document.getElementById('comments').value='';
+  stopTimer(true); renderFormPhotos();
+}
+
+/* ---------- SHARE ---------- */
+function receiptText(e){
+  const tex=TEXTURES.find(t=>t.id===e.texture)||{nm:''};const d=new Date(e.ts);
+  return `📅 ${d.toLocaleString('el-GR')}
+📍 ${e.location}
+⭐ ${e.rating}/10 — ${RATING_LABELS[e.rating]}
+🧬 ${tex.nm}  ⏱️ ${fmtTime(e.duration)}  🤕 Πόνος ${e.pain}/10
+${WEATHER[e.texture]}${e.comments?'\n💬 "'+e.comments+'"':''}`;
+}
+function doShare(txt,okMsg){
+  if(navigator.share){navigator.share({text:txt}).catch(()=>{});}
+  else if(navigator.clipboard){navigator.clipboard.writeText(txt);toast(okMsg);}
+  else toast('Δεν υποστηρίζεται εδώ');
+}
+function shareEntry(id){const e=entries.find(x=>x.id===id);if(!e)return;
+  doShare('💩 ΑΠΟΔΕΙΞΗ ΧΕΣΙΜΑΤΟΣ 💩\n━━━━━━━━━━━━━\n'+receiptText(e)+'\n━━━━━━━━━━━━━\nvia ΧΕΣΙΜULATOR','Αντιγράφηκε 📋');}
+function shareDay(k){
+  const list=entriesForKey(k);if(!list.length)return;
+  const d=new Date(list[0].ts);
+  let txt='💩 ΗΜΕΡΗΣΙΑ ΑΝΑΦΟΡΑ 💩\n'+d.toLocaleDateString('el-GR')+' · '+list.length+' χεσίματα\n';
+  const avg=(list.reduce((s,e)=>s+e.rating,0)/list.length).toFixed(1);
+  txt+='Μ.Ο. βαθμολογίας: '+avg+'/10\n';
+  list.forEach((e,i)=>{txt+='\n── #'+(i+1)+' ──\n'+receiptText(e)+'\n';});
+  txt+='\nvia ΧΕΣΙΜULATOR';
+  doShare(txt,'Αντιγράφηκε η ημέρα 📋');
+}
+
+/* ---------- DELETE ---------- */
+async function delEntry(id){
+  if(!confirm('Διαγραφή αυτής της καταγραφής;'))return;
+  entries=entries.filter(e=>e.id!==id);
+  await sSet('xesim:entries',JSON.stringify(entries));
+  await sDel('xesim:photos:'+id);
+  renderStreak();renderCalendar();renderStats();
+  if(activeDay)openDay(activeDay);
+  toast('Διαγράφηκε 🗑️');
+}
+
+/* ---------- STREAK ---------- */
+function calcStreak(){
+  if(!entries.length)return 0;
+  const days=new Set(entries.map(e=>new Date(e.ts).toDateString()));
+  let s=0;let cur=new Date();
+  if(!days.has(cur.toDateString())){cur.setDate(cur.getDate()-1);if(!days.has(cur.toDateString()))return 0;}
+  while(days.has(cur.toDateString())){s++;cur.setDate(cur.getDate()-1);}
+  return s;
+}
+function renderStreak(){document.getElementById('streakNum').textContent=calcStreak();}
+
+/* ---------- STATS ---------- */
+function renderStats(){
+  const n=entries.length;
+  document.getElementById('stTotal').textContent=n;
+  const avg=n?entries.reduce((s,e)=>s+e.rating,0)/n:0;
+  document.getElementById('stAvg').textContent=n?avg.toFixed(1):'–';
+  const totSec=entries.reduce((s,e)=>s+(e.duration||0),0);
+  document.getElementById('stTime').textContent=totSec<3600?Math.round(totSec/60)+"'":(totSec/3600).toFixed(1)+'h';
+  if(n){const cnt={};entries.forEach(e=>cnt[e.texture]=(cnt[e.texture]||0)+1);
+    const fav=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];const t=TEXTURES.find(x=>x.id===fav);
+    document.getElementById('stFav').textContent=t?t.emo+' '+t.nm:'–';}
+  else document.getElementById('stFav').textContent='–';
+  const avgSec=n?totSec/n:360;const lifeSec=avgSec*1.4*365*55;
+  document.getElementById('lifeDays').textContent=Math.round(lifeSec/86400);
+  const bc=document.getElementById('barChart');bc.innerHTML='';
+  const last=entries.slice(0,10).reverse();
+  if(!last.length)bc.innerHTML='<div style="color:var(--muted);font-size:13px;margin:auto;">Καμία καταγραφή ακόμα</div>';
+  last.forEach(e=>{const b=document.createElement('div');b.className='bar';b.style.height=(e.rating/10*100)+'%';bc.appendChild(b);});
+  renderBadges();
+}
+function renderBadges(){
+  const locs=new Set(entries.map(e=>e.location));
+  const photoTot=entries.reduce((s,e)=>s+(e.photoCount||0),0);
+  const night=entries.some(e=>{const h=new Date(e.ts).getHours();return h>=0&&h<5;});
+  const B=[
+    {emo:'🥇',nm:'Το Πρώτο',ds:'1η καταγραφή',ok:entries.length>=1},
+    {emo:'🔥',nm:'Σερί 3',ds:'3 μέρες σερί',ok:calcStreak()>=3},
+    {emo:'🏆',nm:'Ο Κριτικός',ds:'Έβαλες 10/10',ok:entries.some(e=>e.rating===10)},
+    {emo:'💀',nm:'Η Καταστροφή',ds:'Έβαλες 1/10',ok:entries.some(e=>e.rating===1)},
+    {emo:'⏱️',nm:'Ο Μαραθώνιος',ds:'>15 λεπτά',ok:entries.some(e=>e.duration>=900)},
+    {emo:'⚡',nm:'Η Αστραπή',ds:'<60 δευτ.',ok:entries.some(e=>e.duration>0&&e.duration<60)},
+    {emo:'🌙',nm:'Ο Νυχτερινός',ds:'00:00–05:00',ok:night},
+    {emo:'📸',nm:'Ο Φωτογράφος',ds:'10 φωτό',ok:photoTot>=10},
+    {emo:'🌍',nm:'Ο Περιηγητής',ds:'4+ τοποθεσίες',ok:locs.size>=4},
+    {emo:'💯',nm:'Το Εκατοστάρι',ds:'100 καταγραφές',ok:entries.length>=100},
+  ];
+  const c=document.getElementById('badges');c.innerHTML='';
+  B.forEach(b=>{const d=document.createElement('div');d.className='badge'+(b.ok?'':' locked');
+    d.innerHTML=`<div class="bemo">${b.emo}</div><div><div class="bnm">${b.nm}</div><div class="bds">${b.ds}</div></div>`;c.appendChild(d);});
+}
+
+/* ---------- TABS ---------- */
+function bindTabs(){
+  document.querySelectorAll('nav.tabs button').forEach(b=>{
+    b.onclick=()=>{document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+      document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+      document.getElementById('screen-'+b.dataset.screen).classList.add('active');
+      if(b.dataset.screen==='cal')renderCalendar();
+      if(b.dataset.screen==='stats')renderStats();
+      window.scrollTo({top:0,behavior:'smooth'});};
+  });
+}
+
+/* ---------- PLUMBER ---------- */
+function bindPlumber(){
+  document.getElementById('plumberSave').onclick=async()=>{const v=document.getElementById('plumberInput').value.trim();
+    if(!v){toast('Γράψε νούμερο πρώτα');return;}await sSet('xesim:plumber',JSON.stringify(v));setPlumberUI(v);toast('Αποθηκεύτηκε 🔧');};
+}
+function setPlumberUI(num){document.getElementById('plumberNum').textContent=num;
+  document.getElementById('plumberDs').textContent='Πάτα για κλήση';
+  document.getElementById('plumberCall').href='tel:'+num.replace(/\s/g,'');
+  document.getElementById('plumberInput').value=num;}
+
+/* ---------- HELPERS ---------- */
+function dayName(d){return['Κυριακή','Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο'][d.getDay()];}
+function escapeHtml(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+let toastTimer;
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2400);}
+
+init();
+</script>
+</body>
+</html>
